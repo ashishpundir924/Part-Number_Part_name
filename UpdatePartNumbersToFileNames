@@ -1,0 +1,43 @@
+Sub UpdatePartNumbersToFileNames()
+
+    Dim invApp As Inventor.Application
+    Set invApp = ThisApplication
+
+    ' Ensure an assembly is active
+    If invApp.ActiveDocument.DocumentType <> kAssemblyDocumentObject Then
+        MsgBox "Please open an assembly first.", vbExclamation
+        Exit Sub
+    End If
+
+    Dim asmDoc As AssemblyDocument
+    Set asmDoc = invApp.ActiveDocument
+
+    Dim compOcc As ComponentOccurrence
+    Dim partDoc As PartDocument
+    Dim fileName As String
+
+    On Error GoTo ErrorHandler
+
+    For Each compOcc In asmDoc.ComponentDefinition.Occurrences
+        If compOcc.DefinitionDocumentType = kPartDocumentObject Then
+            Set partDoc = compOcc.Definition.Document
+            
+            ' Get file name without extension or path
+            fileName = Left(partDoc.FullFileName, InStrRev(partDoc.FullFileName, ".") - 1)
+            fileName = Mid(fileName, InStrRev(fileName, "\") + 1)
+
+            ' Update the "Part Number" iProperty
+            partDoc.PropertySets.Item("Design Tracking Properties").Item("Part Number").Value = fileName
+
+            ' Optional: Save part file
+            ' partDoc.Save
+        End If
+    Next compOcc
+
+    MsgBox "All part numbers updated to match file names.", vbInformation
+    Exit Sub
+
+ErrorHandler:
+    MsgBox "Error: " & Err.Description, vbCritical
+
+End Sub
